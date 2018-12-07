@@ -1,0 +1,6 @@
+int nf_register_hook(struct nf_hook_ops *reg)//hook注册函数
+
+nf_hooks//全局数组
+
+NF_HOOK//hook函数调用宏
+
