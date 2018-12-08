@@ -2852,6 +2852,7 @@ __libc_malloc(size_t bytes)
     return (*hook)(bytes, RETURN_ADDRESS (0));
 
   //查找ar_ptr? 不理解怎么查找的 liz
+  //ar_ptr会指向arena_key，应该是main_arena链上的最后一个元素（或者直接指向main_arena，待确认）
   arena_lookup(ar_ptr);
 
   //ar_ptr不为空,则上锁，为0则调用arena_get2生成一个新的
