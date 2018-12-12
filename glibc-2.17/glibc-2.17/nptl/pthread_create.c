@@ -441,6 +441,7 @@ static const struct pthread_attr default_attr =
   };
 
 
+//pthread create对应执行函数 liz
 int
 __pthread_create_2_1 (newthread, attr, start_routine, arg)
      pthread_t *newthread;

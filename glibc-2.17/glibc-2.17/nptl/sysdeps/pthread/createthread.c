@@ -45,7 +45,7 @@
 int *__libc_multiple_threads_ptr attribute_hidden;
 #endif
 
-
+//由此函数大胆猜测，pthread库创建的线程是内核级别的，接受内核调度 liz
 static int
 do_clone (struct pthread *pd, const struct pthread_attr *attr,
 	  int clone_flags, int (*fct) (void *), STACK_VARIABLES_PARMS,
