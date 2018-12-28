@@ -194,6 +194,8 @@ static inline int ip_finish_output2(struct sk_buff *skb)
 	}
 
 	rcu_read_lock_bh();
+
+	//目的ip地址 liz
 	nexthop = (__force u32) rt_nexthop(rt, ip_hdr(skb)->daddr);
 
 	//查找邻居表，在ip层面也就是查找arp表 liz

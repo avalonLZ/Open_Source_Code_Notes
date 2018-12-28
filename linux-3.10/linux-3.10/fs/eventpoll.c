@@ -132,6 +132,7 @@ struct nested_calls {
  * Avoid increasing the size of this struct, there can be many thousands
  * of these on a server and we do not want this to take another cache line.
  */
+ //一个fd对应一个该节点，该节点挂接在队列
 struct epitem {
 	/* RB tree node used to link this structure to the eventpoll RB tree */
 	struct rb_node rbn;
@@ -185,12 +186,15 @@ struct eventpoll {
 	struct mutex mtx;
 
 	/* Wait queue used by sys_epoll_wait() */
+	//调用epoll_wait后等待的进程会进入此队列 lizs
 	wait_queue_head_t wq;
 
 	/* Wait queue used by file->poll() */
+	//不是很重要，可以先不看
 	wait_queue_head_t poll_wait;
 
 	/* List of ready file descriptors */
+	//满足触发条件的fd将被加入此队列
 	struct list_head rdllist;
 
 	/* RB tree root used to store monitored fd structs */
@@ -616,6 +620,7 @@ static int ep_scan_ready_list(struct eventpoll *ep,
 	/*
 	 * Now call the callback function.
 	 */
+	 //将被触发的fd拷贝到用户态 liz
 	error = (*sproc)(ep, &txlist, priv);
 
 	spin_lock_irqsave(&ep->lock, flags);
@@ -650,12 +655,17 @@ static int ep_scan_ready_list(struct eventpoll *ep,
 	list_splice(&txlist, &ep->rdllist);
 	__pm_relax(ep->ws);
 
+    //如果fd就绪队列非空
 	if (!list_empty(&ep->rdllist)) {
 		/*
 		 * Wake up (if active) both the eventpoll wait list and
 		 * the ->poll() wait list (delayed after we release the lock).
 		 */
 		if (waitqueue_active(&ep->wq))
+			//又将有进程被唤醒
+			//多进程共用一个epfd，且都调用epoll_wait
+			//在某个fd是水平触发的情况下
+			//可能会导致惊群问题 liz
 			wake_up_locked(&ep->wq);
 		if (waitqueue_active(&ep->poll_wait))
 			pwake++;
@@ -916,9 +926,16 @@ static int ep_alloc(struct eventpoll **pep)
 
 	spin_lock_init(&ep->lock);
 	mutex_init(&ep->mtx);
+
+	//初始化等待队列wq liz
 	init_waitqueue_head(&ep->wq);
+
+	//初始化等待队列poll_wait
 	init_waitqueue_head(&ep->poll_wait);
+
+    //初始化事件读取队列redllist
 	INIT_LIST_HEAD(&ep->rdllist);
+	
 	ep->rbr = RB_ROOT;
 	ep->ovflist = EP_UNACTIVE_PTR;
 	ep->user = user;
@@ -966,6 +983,10 @@ static struct epitem *ep_find(struct eventpoll *ep, struct file *file, int fd)
  * mechanism. It is called by the stored file descriptors when they
  * have events to report.
  */
+ //epfd中监听的fd被事件触发时，调用此回调函数 liz
+ //主要功能:
+ //1、唤醒wq队列中的等待进程
+ //2、将被触发的fd加入rdllist队列
 static int ep_poll_callback(wait_queue_t *wait, unsigned mode, int sync, void *key)
 {
 	int pwake = 0;
@@ -1037,6 +1058,7 @@ static int ep_poll_callback(wait_queue_t *wait, unsigned mode, int sync, void *k
 	 * wait list.
 	 */
 	if (waitqueue_active(&ep->wq))
+		//唤醒等待进程 liz
 		wake_up_locked(&ep->wq);
 	if (waitqueue_active(&ep->poll_wait))
 		pwake++;
@@ -1248,6 +1270,7 @@ static int ep_insert(struct eventpoll *ep, struct epoll_event *event,
 	INIT_LIST_HEAD(&epi->fllink);
 	INIT_LIST_HEAD(&epi->pwqlist);
 	epi->ep = ep;
+	//生成一个与fd对应的epi节点(用fd初始化epi节点)
 	ep_set_ffd(&epi->ffd, tfile, fd);
 	epi->event = *event;
 	epi->nwait = 0;
@@ -1262,6 +1285,7 @@ static int ep_insert(struct eventpoll *ep, struct epoll_event *event,
 
 	/* Initialize the poll table using the queue callback */
 	epq.epi = epi;
+	//
 	init_poll_funcptr(&epq.pt, ep_ptable_queue_proc);
 
 	/*
@@ -1291,6 +1315,7 @@ static int ep_insert(struct eventpoll *ep, struct epoll_event *event,
 	 * Add the current item to the RB tree. All RB tree operations are
 	 * protected by "mtx", and ep_insert() is called with "mtx" held.
 	 */
+	 //将新的epi节点挂接在epoll中的rb树上
 	ep_rbtree_insert(ep, epi);
 
 	/* now check if we've created too many backpaths */
@@ -1302,6 +1327,7 @@ static int ep_insert(struct eventpoll *ep, struct epoll_event *event,
 	spin_lock_irqsave(&ep->lock, flags);
 
 	/* If the file is already "ready" we drop it inside the ready list */
+	//若fd已经是满足触发要求的话，将该fd挂到rdllist上
 	if ((revents & event->events) && !ep_is_linked(&epi->rdllink)) {
 		list_add_tail(&epi->rdllink, &ep->rdllist);
 		ep_pm_stay_awake(epi);
@@ -1479,6 +1505,7 @@ static int ep_send_events_proc(struct eventpoll *ep, struct list_head *head,
 		 * is holding "mtx", so no operations coming from userspace
 		 * can change the item.
 		 */
+		 //拷贝到用户态
 		if (revents) {
 			if (__put_user(revents, &uevent->events) ||
 			    __put_user(epi->event.data, &uevent->data)) {
@@ -1488,8 +1515,11 @@ static int ep_send_events_proc(struct eventpoll *ep, struct list_head *head,
 			}
 			eventcnt++;
 			uevent++;
+			//若该fd设置了单次监听
 			if (epi->event.events & EPOLLONESHOT)
 				epi->event.events &= EP_PRIVATE_BITS;
+			
+			//若是水平触发，则再将该fd加到rdllist队列中
 			else if (!(epi->event.events & EPOLLET)) {
 				/*
 				 * If this file has been added with Level
@@ -1587,13 +1617,16 @@ fetch_events:
 		init_waitqueue_entry(&wait, current);
 		__add_wait_queue_exclusive(&ep->wq, &wait);
 
-		for (;;) {
+		for (;;)
+		{
 			/*
 			 * We don't want to sleep if the ep_poll_callback() sends us
 			 * a wakeup in between. That's why we set the task state
 			 * to TASK_INTERRUPTIBLE before doing the checks.
 			 */
 			set_current_state(TASK_INTERRUPTIBLE);
+
+			//该进程被唤醒，判断是事件触发、信号触发还是超时触发
 			if (ep_events_available(ep) || timed_out)
 				break;
 			if (signal_pending(current)) {
@@ -1602,6 +1635,8 @@ fetch_events:
 			}
 
 			spin_unlock_irqrestore(&ep->lock, flags);
+			
+			 //调度，阻塞，等待ep_poll_callback将其唤醒 liz
 			if (!schedule_hrtimeout_range(to, slack, HRTIMER_MODE_ABS))
 				timed_out = 1;
 
@@ -1729,6 +1764,7 @@ static void clear_tfile_check_list(void)
 /*
  * Open an eventpoll file descriptor.
  */
+ //创建epoll liz
 SYSCALL_DEFINE1(epoll_create1, int, flags)
 {
 	int error, fd;
@@ -1785,6 +1821,7 @@ SYSCALL_DEFINE1(epoll_create, int, size)
  * the eventpoll file that enables the insertion/removal/change of
  * file descriptors inside the interest set.
  */
+ //将fd及其事件注册到epfd中
 SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
 		struct epoll_event __user *, event)
 {
@@ -1819,7 +1856,7 @@ SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
 	/* Check if EPOLLWAKEUP is allowed */
 	if ((epds.events & EPOLLWAKEUP) && !capable(CAP_BLOCK_SUSPEND))
 		epds.events &= ~EPOLLWAKEUP;
-
+	
 	/*
 	 * We have to check that the file structure underneath the file descriptor
 	 * the user passed to us _is_ an eventpoll file. And also we do not permit
@@ -1876,6 +1913,7 @@ SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
 	case EPOLL_CTL_ADD:
 		if (!epi) {
 			epds.events |= POLLERR | POLLHUP;
+			//插入一个需要监控的fd节点
 			error = ep_insert(ep, &epds, tfile, fd);
 		} else
 			error = -EEXIST;
@@ -1913,6 +1951,7 @@ error_return:
  * Implement the event wait interface for the eventpoll file. It is the kernel
  * part of the user space epoll_wait(2).
  */
+ //epoll_wait实现 liz
 SYSCALL_DEFINE4(epoll_wait, int, epfd, struct epoll_event __user *, events,
 		int, maxevents, int, timeout)
 {
@@ -1925,6 +1964,7 @@ SYSCALL_DEFINE4(epoll_wait, int, epfd, struct epoll_event __user *, events,
 		return -EINVAL;
 
 	/* Verify that the area passed by the user is writeable */
+	//判断传入的events地址是否可写 liz
 	if (!access_ok(VERIFY_WRITE, events, maxevents * sizeof(struct epoll_event)))
 		return -EFAULT;
 

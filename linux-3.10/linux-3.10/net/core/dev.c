@@ -2798,6 +2798,8 @@ int dev_queue_xmit(struct sk_buff *skb)
 	skb->tc_verd = SET_TC_AT(skb->tc_verd, AT_EGRESS);
 #endif
 	trace_net_dev_queue(skb);
+
+    //流控入队函数 liz
 	if (q->enqueue) {
 		rc = __dev_xmit_skb(skb, q, dev, txq);
 		goto out;

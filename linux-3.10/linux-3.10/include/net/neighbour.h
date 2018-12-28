@@ -344,6 +344,7 @@ static inline int neigh_hh_output(const struct hh_cache *hh, struct sk_buff *skb
 		seq = read_seqbegin(&hh->hh_lock);
 		hh_len = hh->hh_len;
 		if (likely(hh_len <= HH_DATA_MOD)) {
+			
 			/* this is inlined by gcc */
 			memcpy(skb->data - HH_DATA_MOD, hh->hh_data, HH_DATA_MOD);
 		} else {
@@ -355,8 +356,7 @@ static inline int neigh_hh_output(const struct hh_cache *hh, struct sk_buff *skb
 
 	skb_push(skb, hh_len);
 
-    //号称是发送模块，但实际是选择是否
-	//进入流控模块，最终，从流控模块的dequeue出来发包 liz
+	//二层封装完成，进入流控模块，最终，从流控模块的dequeue出来发包 liz
 	return dev_queue_xmit(skb);
 }
 
