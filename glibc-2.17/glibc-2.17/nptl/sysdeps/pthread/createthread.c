@@ -45,7 +45,8 @@
 int *__libc_multiple_threads_ptr attribute_hidden;
 #endif
 
-//由此函数大胆猜测，pthread库创建的线程是内核级别的，接受内核调度 liz
+//由此函数调用__clone()可知
+//pthread库创建的线程是内核级别的，接受内核调度 liz
 static int
 do_clone (struct pthread *pd, const struct pthread_attr *attr,
 	  int clone_flags, int (*fct) (void *), STACK_VARIABLES_PARMS,
@@ -71,6 +72,7 @@ do_clone (struct pthread *pd, const struct pthread_attr *attr,
      that cares whether the thread count is correct.  */
   atomic_increment (&__nptl_nthreads);
 
+  //创建轻量级进程（内核态线程）(用户线程) liz
   int rc = ARCH_CLONE (fct, STACK_VARIABLES_ARGS, clone_flags,
 		       pd, &pd->tid, TLS_VALUE, &pd->tid);
 
