@@ -36,7 +36,9 @@ strcmp (p1, p2)
     {
       c1 = (unsigned char) *s1++;
       c2 = (unsigned char) *s2++;
-      if (c1 == '\0')
+
+	  //先前每一位都相同的情况下，位数多的大 liz
+	  if (c1 == '\0')
 	return c1 - c2;
     }
   while (c1 == c2);

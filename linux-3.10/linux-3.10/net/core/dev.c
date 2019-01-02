@@ -2692,6 +2692,8 @@ static inline int __dev_xmit_skb(struct sk_buff *skb, struct Qdisc *q,
 				spin_unlock(&q->busylock);
 				contended = false;
 			}
+			
+			//qos出队 liz
 			__qdisc_run(q);
 		} else
 			qdisc_run_end(q);
@@ -2832,7 +2834,7 @@ int dev_queue_xmit(struct sk_buff *skb)
 			if (!netif_xmit_stopped(txq)) {
 				__this_cpu_inc(xmit_recursion);
 
-			    //网卡发送入口函数，二层协议，链路层协议也是在这个接口中做的（Vlan等） liz
+			    //网卡发送入口函数 liz
 				rc = dev_hard_start_xmit(skb, dev, txq);
 			
 				__this_cpu_dec(xmit_recursion);
@@ -6330,6 +6332,7 @@ static int __init net_dev_init(void)
 	if (register_pernet_device(&default_device_ops))
 		goto out;
 
+    //发送软中断中调用qos出队函数 liz
 	open_softirq(NET_TX_SOFTIRQ, net_tx_action);
 	open_softirq(NET_RX_SOFTIRQ, net_rx_action);
 

@@ -186,7 +186,7 @@ struct eventpoll {
 	struct mutex mtx;
 
 	/* Wait queue used by sys_epoll_wait() */
-	//调用epoll_wait后等待的进程会进入此队列 lizs
+	//调用epoll_wait后等待的进程会进入此队列 liz
 	wait_queue_head_t wq;
 
 	/* Wait queue used by file->poll() */
@@ -620,7 +620,7 @@ static int ep_scan_ready_list(struct eventpoll *ep,
 	/*
 	 * Now call the callback function.
 	 */
-	 //将被触发的fd拷贝到用户态 liz
+	 //将被触发的fd映射到用户态 liz
 	error = (*sproc)(ep, &txlist, priv);
 
 	spin_lock_irqsave(&ep->lock, flags);
@@ -1270,6 +1270,7 @@ static int ep_insert(struct eventpoll *ep, struct epoll_event *event,
 	INIT_LIST_HEAD(&epi->fllink);
 	INIT_LIST_HEAD(&epi->pwqlist);
 	epi->ep = ep;
+	
 	//生成一个与fd对应的epi节点(用fd初始化epi节点)
 	ep_set_ffd(&epi->ffd, tfile, fd);
 	epi->event = *event;
@@ -1285,7 +1286,8 @@ static int ep_insert(struct eventpoll *ep, struct epoll_event *event,
 
 	/* Initialize the poll table using the queue callback */
 	epq.epi = epi;
-	//
+	
+	//注册回调函数
 	init_poll_funcptr(&epq.pt, ep_ptable_queue_proc);
 
 	/*
@@ -1505,7 +1507,7 @@ static int ep_send_events_proc(struct eventpoll *ep, struct list_head *head,
 		 * is holding "mtx", so no operations coming from userspace
 		 * can change the item.
 		 */
-		 //拷贝到用户态
+		 //映射到用户态
 		if (revents) {
 			if (__put_user(revents, &uevent->events) ||
 			    __put_user(epi->event.data, &uevent->data)) {
@@ -1657,6 +1659,7 @@ check_events:
 	 * there's still timeout left over, we go trying again in search of
 	 * more luck.
 	 */
+	 //在里头，将rdllist映射至用户态
 	if (!res && eavail &&
 	    !(res = ep_send_events(ep, events, maxevents)) && !timed_out)
 		goto fetch_events;
