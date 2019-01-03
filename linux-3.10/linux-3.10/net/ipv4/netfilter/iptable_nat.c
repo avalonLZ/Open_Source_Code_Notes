@@ -248,6 +248,7 @@ nf_nat_ipv4_local_fn(unsigned int hooknum,
 	return ret;
 }
 
+//nat hook初始化 liz
 static struct nf_hook_ops nf_nat_ipv4_ops[] __read_mostly = {
 	/* Before packet filtering, change destination */
 	{
@@ -313,6 +314,7 @@ static int __init iptable_nat_init(void)
 	if (err < 0)
 		goto err1;
 
+    //将nat的hook挂载到对应的处理链上 liz
 	err = nf_register_hooks(nf_nat_ipv4_ops, ARRAY_SIZE(nf_nat_ipv4_ops));
 	if (err < 0)
 		goto err2;
