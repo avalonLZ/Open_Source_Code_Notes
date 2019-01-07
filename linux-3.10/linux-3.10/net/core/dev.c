@@ -3123,6 +3123,7 @@ static int enqueue_to_backlog(struct sk_buff *skb, int cpu,
 	local_irq_save(flags);
 
 	rps_lock(sd);
+	///proc/sys/net/core/netdev_max_backlog可修改netdev_max_backlog的值 liz
 	if (skb_queue_len(&sd->input_pkt_queue) <= netdev_max_backlog) {
 		if (skb_queue_len(&sd->input_pkt_queue)) {
 enqueue:
@@ -3187,10 +3188,12 @@ int netif_rx(struct sk_buff *skb)
 		preempt_disable();
 		rcu_read_lock();
 
+		//rps报文分发处理 liz
 		cpu = get_rps_cpu(skb->dev, skb, &rflow);
 		if (cpu < 0)
 			cpu = smp_processor_id();
 
+        //添加数据包至接收队列（不同cpu绑定不同队列） liz
 		ret = enqueue_to_backlog(skb, cpu, &rflow->last_qtail);
 
 		rcu_read_unlock();

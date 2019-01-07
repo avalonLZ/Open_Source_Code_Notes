@@ -1084,9 +1084,13 @@ static void ep_ptable_queue_proc(struct file *file, wait_queue_head_t *whead,
 	struct eppoll_entry *pwq;
 
 	if (epi->nwait >= 0 && (pwq = kmem_cache_alloc(pwq_cache, GFP_KERNEL))) {
+
+	    //注册等待队列项自定义唤醒函数，被唤醒后执行ep_poll_callback
 		init_waitqueue_func_entry(&pwq->wait, ep_poll_callback);
 		pwq->whead = whead;
 		pwq->base = epi;
+
+		//将pwq->wait加入等待队列中
 		add_wait_queue(whead, &pwq->wait);
 		list_add_tail(&pwq->llink, &epi->pwqlist);
 		epi->nwait++;
@@ -1287,7 +1291,7 @@ static int ep_insert(struct eventpoll *ep, struct epoll_event *event,
 	/* Initialize the poll table using the queue callback */
 	epq.epi = epi;
 	
-	//注册回调函数
+	//注册回调函数ep_ptable_queue_proc，会被在驱动中调用
 	init_poll_funcptr(&epq.pt, ep_ptable_queue_proc);
 
 	/*

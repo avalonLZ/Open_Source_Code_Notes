@@ -2732,6 +2732,7 @@ static struct rfd *nic_rx_pkts(struct et131x_adapter *adapter)
 
 	skb->protocol = eth_type_trans(skb, adapter->netdev);
 	skb->ip_summed = CHECKSUM_NONE;
+	//发送数据包至协议栈 liz
 	netif_rx_ni(skb);
 
 out:
