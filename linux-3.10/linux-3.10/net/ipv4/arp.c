@@ -787,6 +787,8 @@ static int arp_process(struct sk_buff *skb)
 	arp_ptr = (unsigned char *)(arp + 1);
 	sha	= arp_ptr;
 	arp_ptr += dev->addr_len;
+
+	//从arp包中拷贝源ip地址 liz
 	memcpy(&sip, arp_ptr, 4);
 	arp_ptr += 4;
 	switch (dev_type) {
@@ -888,7 +890,8 @@ static int arp_process(struct sk_buff *skb)
 	}
 
 	/* Update our ARP tables */
-
+    //更新arp表（邻居表） liz
+    //可以看出是利用arp报文载荷中的数据，而非以太头中的数据
 	n = __neigh_lookup(&arp_tbl, &sip, dev, 0);
 
 	if (IN_DEV_ARP_ACCEPT(in_dev)) {
