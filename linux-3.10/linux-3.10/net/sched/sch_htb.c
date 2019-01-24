@@ -153,7 +153,9 @@ struct htb_sched {
 	struct qdisc_watchdog watchdog;
 
 	/* non shaped skbs; let them go directly thru */
+	//qos数据包进入的队列 liz
 	struct sk_buff_head direct_queue;
+	//队列的长度限定
 	int direct_qlen;	/* max qlen of above */
 
 	long direct_pkts;
@@ -554,6 +556,7 @@ static int htb_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 	struct htb_class *cl = htb_classify(skb, sch, &ret);
 
 	if (cl == HTB_DIRECT) {
+		//进入直接发送的队列
 		/* enqueue to helper queue */
 		if (q->direct_queue.qlen < q->direct_qlen) {
 			__skb_queue_tail(&q->direct_queue, skb);
@@ -567,7 +570,7 @@ static int htb_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 			sch->qstats.drops++;
 		kfree_skb(skb);
 		return ret;
-#endif
+#endif//进入htb叶子节点队列,进行流控 liz
 	} else if ((ret = qdisc_enqueue(skb, cl->un.leaf.q)) != NET_XMIT_SUCCESS) {
 		if (net_xmit_drop_count(ret)) {
 			sch->qstats.drops++;
@@ -1027,6 +1030,7 @@ static int htb_init(struct Qdisc *sch, struct nlattr *opt)
 	if (tb[TCA_HTB_DIRECT_QLEN])
 		q->direct_qlen = nla_get_u32(tb[TCA_HTB_DIRECT_QLEN]);
 	else {
+		//tx_queue_len表示发送队列的最大长度 liz
 		q->direct_qlen = qdisc_dev(sch)->tx_queue_len;
 		if (q->direct_qlen < 2)	/* some devices have zero tx_queue_len */
 			q->direct_qlen = 2;
@@ -1386,6 +1390,7 @@ static int htb_change_class(struct Qdisc *sch, u32 classid,
 		 * so that can't be used inside of sch_tree_lock
 		 * -- thanks to Karlis Peisenieks
 		 */
+		 //初始化叶子节点的qdisc结构,包含了叶子节点收包队列的queue初始化 liz
 		new_q = qdisc_create_dflt(sch->dev_queue,
 					  &pfifo_qdisc_ops, classid);
 		sch_tree_lock(sch);

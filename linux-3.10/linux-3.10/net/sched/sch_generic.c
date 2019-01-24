@@ -862,6 +862,7 @@ static void dev_init_scheduler_queue(struct net_device *dev,
 	dev_queue->qdisc_sleeping = qdisc;
 }
 
+//初始化默认的流量控制结构qdisc liz
 void dev_init_scheduler(struct net_device *dev)
 {
 	dev->qdisc = &noop_qdisc;
