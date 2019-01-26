@@ -132,6 +132,8 @@ struct htb_sched {
 	struct list_head drops[TC_HTB_NUMPRIO];/* active leaves (for drops) */
 
 	/* self list - roots of self generating tree */
+    //class树结构上的叶子节点，将按不同优先级和深度使用红黑树来存放 liz
+    //方便节点走包状态的动态变化（同一优先级或同一深度）
 	struct rb_root row[TC_HTB_MAXDEPTH][TC_HTB_NUMPRIO];
 	int row_mask[TC_HTB_MAXDEPTH];
 	struct rb_node *ptr[TC_HTB_MAXDEPTH][TC_HTB_NUMPRIO];
