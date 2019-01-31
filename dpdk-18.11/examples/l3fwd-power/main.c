@@ -2045,7 +2045,8 @@ main(int argc, char **argv)
 		ret = init_mem(NB_MBUF);
 		if (ret < 0)
 			rte_exit(EXIT_FAILURE, "init_mem failed\n");
-
+		
+        //初始化跟core数量相同的发送队列 liz
 		for (lcore_id = 0; lcore_id < RTE_MAX_LCORE; lcore_id++) {
 			if (rte_lcore_is_enabled(lcore_id) == 0)
 				continue;
@@ -2062,6 +2063,7 @@ main(int argc, char **argv)
 			rte_eth_tx_buffer_init(qconf->tx_buffer[portid], MAX_PKT_BURST);
 		}
 
+		//将初始化的发送队列都绑定在一块网卡上 liz
 		/* init one TX queue per couple (lcore,port) */
 		queueid = 0;
 		for (lcore_id = 0; lcore_id < RTE_MAX_LCORE; lcore_id++) {
@@ -2115,6 +2117,8 @@ main(int argc, char **argv)
 		qconf = &lcore_conf[lcore_id];
 		printf("\nInitializing rx queues on lcore %u ... ", lcore_id );
 		fflush(stdout);
+
+		//网卡接收队列初始化，并将每个接收队列放置于？
 		/* init RX queues */
 		for(queue = 0; queue < qconf->n_rx_queue; ++queue) {
 			struct rte_eth_rxconf rxq_conf;
