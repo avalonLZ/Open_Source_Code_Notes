@@ -2400,6 +2400,7 @@ static pcap_t * openPcapFileOrDevice(u_int16_t thread_id, const u_char * pcap_fi
 /**
  * @brief Check pcap packet
  */
+ //实际的ndpi检测入口 liz
 static void ndpi_process_packet(u_char *args,
 				const struct pcap_pkthdr *header,
 				const u_char *packet) {
@@ -2570,6 +2571,7 @@ void * processing_thread(void *_thread_id) {
       h.len = h.caplen = len;
       gettimeofday(&h.ts, NULL);
 
+      //实际的ndpi检测入口 liz
       ndpi_process_packet((u_char*)&thread_id, &h, (const u_char *)data);
       rte_pktmbuf_free(bufs[i]);
     }

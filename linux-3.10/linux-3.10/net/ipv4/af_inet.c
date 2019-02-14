@@ -192,6 +192,7 @@ static int inet_autobind(struct sock *sk)
 /*
  *	Move a socket into listening state.
  */
+ //listen系统调用，调用的函数 liz
 int inet_listen(struct socket *sock, int backlog)
 {
 	struct sock *sk = sock->sk;

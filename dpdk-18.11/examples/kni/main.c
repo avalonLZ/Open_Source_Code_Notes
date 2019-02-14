@@ -80,9 +80,21 @@
  * Structure of port parameters
  */
 struct kni_port_params {
+
+    //网口id
 	uint16_t port_id;/* Port ID */
+	
+	//该核负责:
+	//nic->用户态->内核协议栈
+	//kni_ingress->rte_eth_rx_burst->rte_kni_tx_burst
 	unsigned lcore_rx; /* lcore ID for RX */
+
+	//该核负责:
+	//内核协议栈->用户态->nic
+	//kni_egress->rte_kni_rx_burst->rte_eth_tx_burst
 	unsigned lcore_tx; /* lcore ID for TX */
+
+    //
 	uint32_t nb_lcore_k; /* Number of lcores for KNI multi kernel threads */
 	uint32_t nb_kni; /* Number of KNI devices to be created */
 	unsigned lcore_k[KNI_MAX_KTHREAD]; /* lcore ID list for kthreads */
