@@ -150,6 +150,7 @@ static int br_handle_local_finish(struct sk_buff *skb)
  * Return NULL if skb is handled
  * note: already called with rcu_read_lock
  */
+ //桥口入口函数（网口配置为桥口时，该网口的收包将走此） liz
 rx_handler_result_t br_handle_frame(struct sk_buff **pskb)
 {
 	struct net_bridge_port *p;

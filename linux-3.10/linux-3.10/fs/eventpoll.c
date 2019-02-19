@@ -1291,7 +1291,7 @@ static int ep_insert(struct eventpoll *ep, struct epoll_event *event,
 	/* Initialize the poll table using the queue callback */
 	epq.epi = epi;
 	
-	//注册回调函数ep_ptable_queue_proc，会被在驱动中调用
+	//注册回调函数ep_ptable_queue_proc，至网卡收包驱动的poll函数中 liz
 	init_poll_funcptr(&epq.pt, ep_ptable_queue_proc);
 
 	/*

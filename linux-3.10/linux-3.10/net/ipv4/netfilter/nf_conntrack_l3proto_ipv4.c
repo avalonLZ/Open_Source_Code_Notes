@@ -152,6 +152,7 @@ out:
 	return nf_conntrack_confirm(skb);
 }
 
+//链接跟踪入口函数 liz
 static unsigned int ipv4_conntrack_in(unsigned int hooknum,
 				      struct sk_buff *skb,
 				      const struct net_device *in,

@@ -3604,6 +3604,7 @@ static int __netif_receive_skb(struct sk_buff *skb)
  *	NET_RX_SUCCESS: no congestion
  *	NET_RX_DROP: packet was dropped
  */
+ //内核协议栈入口函数 liz
 int netif_receive_skb(struct sk_buff *skb)
 {
 	net_timestamp_check(netdev_tstamp_prequeue, skb);
