@@ -1022,6 +1022,7 @@ static int ep_poll_callback(wait_queue_t *wait, unsigned mode, int sync, void *k
 	 * callback. We need to be able to handle both cases here, hence the
 	 * test for "key" != NULL before the event match test.
 	 */
+	 //key值才是glibc中扩展的大部分的事件（具体key值从哪来，需要再研究） liz
 	if (key && !((unsigned long) key & epi->event.events))
 		goto out_unlock;
 

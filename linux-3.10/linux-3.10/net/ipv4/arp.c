@@ -788,7 +788,7 @@ static int arp_process(struct sk_buff *skb)
 	sha	= arp_ptr;
 	arp_ptr += dev->addr_len;
 
-	//从arp包中拷贝源ip地址 liz
+	//从arp包（以太网载荷）中拷贝源ip地址 liz
 	memcpy(&sip, arp_ptr, 4);
 	arp_ptr += 4;
 	switch (dev_type) {
