@@ -1716,6 +1716,8 @@ struct sk_buff *sock_alloc_send_pskb(struct sock *sk, unsigned long header_len,
 	if (gfp_mask & __GFP_WAIT)
 		gfp_mask |= __GFP_REPEAT;
 
+    //该返回值默认是最大值
+    ///noblock默认是置为0(此noblock不是用户态发送消息时传入的标志)
 	timeo = sock_sndtimeo(sk, noblock);
 	while (1) {
 		err = sock_error(sk);
@@ -1770,6 +1772,7 @@ struct sk_buff *sock_alloc_send_pskb(struct sock *sk, unsigned long header_len,
 			goto failure;
 		if (signal_pending(current))
 			goto interrupted;
+        //sendto线程，进入此处休眠 liz
 		timeo = sock_wait_for_wmem(sk, timeo);
 	}
 

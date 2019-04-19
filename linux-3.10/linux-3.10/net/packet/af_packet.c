@@ -2104,6 +2104,7 @@ static int tpacket_snd(struct packet_sock *po, struct msghdr *msg)
 		status = TP_STATUS_SEND_REQUEST;
 		hlen = LL_RESERVED_SPACE(dev);
 		tlen = dev->needed_tailroom;
+        //sendto大包时，会在这里面睡觉 liz
 		skb = sock_alloc_send_skb(&po->sk,
 				hlen + tlen + sizeof(struct sockaddr_ll),
 				0, &err);
@@ -2133,6 +2134,7 @@ static int tpacket_snd(struct packet_sock *po, struct msghdr *msg)
 		atomic_inc(&po->tx_ring.pending);
 
 		status = TP_STATUS_SEND_REQUEST;
+        //由此进入内核流控逻辑
 		err = dev_queue_xmit(skb);
 		if (unlikely(err > 0)) {
 			err = net_xmit_errno(err);
@@ -2151,6 +2153,7 @@ static int tpacket_snd(struct packet_sock *po, struct msghdr *msg)
 		packet_increment_head(&po->tx_ring);
 		len_sum += tp_len;
 	} while (likely((ph != NULL) ||
+            //sendto设置的noblock是在此处生效
 			((!(msg->msg_flags & MSG_DONTWAIT)) &&
 			 (atomic_read(&po->tx_ring.pending))))
 		);
