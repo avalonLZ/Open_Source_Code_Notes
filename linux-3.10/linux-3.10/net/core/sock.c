@@ -1770,6 +1770,7 @@ struct sk_buff *sock_alloc_send_pskb(struct sock *sk, unsigned long header_len,
 		err = -EAGAIN;
 		if (!timeo)
 			goto failure;
+        //检查是否有中断信号
 		if (signal_pending(current))
 			goto interrupted;
         //sendto线程，进入此处休眠 liz
