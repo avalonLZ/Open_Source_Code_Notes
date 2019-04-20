@@ -40,6 +40,8 @@ __pthread_rwlock_init (rwlock, attr)
   memset (rwlock, '\0', sizeof (*rwlock));
 
   //注意此处默认是读优先 liz
+  //rwlock在这一版的glibc中，只实现了enum前两个方式
+  //因为这里只有可能是0和1
   rwlock->__data.__flags
     = iattr->lockkind == PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP;
 
