@@ -471,6 +471,8 @@ typedef uint64_t MARKER64[0]; /**< marker that allows us to overwrite 8 bytes
 /**
  * The generic rte_mbuf, containing a packet mbuf.
  */
+ /*一个mbuf默认是放RTE_MBUF_DEFAULT_DATAROOM（2KByte）大小的数据*/
+/*需要在初始化mempool的时候指定，一个mbuf存放数据的长度*/
 struct rte_mbuf {
 	MARKER cacheline0;
 
@@ -503,16 +505,16 @@ struct rte_mbuf {
 	RTE_STD_C11
 	union {
 		rte_atomic16_t refcnt_atomic; /**< Atomically accessed refcnt */
-		uint16_t refcnt;              /**< Non-atomically accessed refcnt */
+		uint16_t refcnt;              /**该mbuf的引用计数< Non-atomically accessed refcnt */
 	};
-	uint16_t nb_segs;         /**< Number of segments. */
+	uint16_t nb_segs;         /**表示这个报文一共分了多少个mbuf/段< Number of segments. */
 
 	/** Input port (16 bits to support more than 256 virtual ports).
 	 * The event eth Tx adapter uses this field to specify the output port.
 	 */
 	uint16_t port;
 
-	uint64_t ol_flags;        /**< Offload features. */
+	uint64_t ol_flags;        /**卸载特性标识，是否要让网卡计算checksum等 < Offload features. */
 
 	/* remaining bytes are set on RX when pulling packet from descriptor */
 	MARKER rx_descriptor_fields1;
@@ -551,10 +553,10 @@ struct rte_mbuf {
 		};
 	};
 
-	uint32_t pkt_len;         /**< Total pkt len: sum of all segments. */
-	uint16_t data_len;        /**< Amount of data in segment buffer. */
+	uint32_t pkt_len;         /**< 所有段的数据长度 Total pkt len: sum of all segments. */
+	uint16_t data_len;        /**< 当前段的数据长度 Amount of data in segment buffer. */
 	/** VLAN TCI (CPU order), valid if PKT_RX_VLAN is set. */
-	uint16_t vlan_tci;
+	uint16_t vlan_tci;//如果ol_flags设置了PKT_RX_VLAN，才有意义
 
 	RTE_STD_C11
 	union {
@@ -599,14 +601,14 @@ struct rte_mbuf {
 	};
 
 	/** Outer VLAN TCI (CPU order), valid if PKT_RX_QINQ is set. */
-	uint16_t vlan_tci_outer;
+	uint16_t vlan_tci_outer;//如果ol_flags设置了PKT_RX_QINQ，这个变量才有意义
 
-	uint16_t buf_len;         /**< Length of segment buffer. */
+	uint16_t buf_len;         /**整个mbuf的长度 < Length of segment buffer. */
 
 	/** Valid if PKT_RX_TIMESTAMP is set. The unit and time reference
 	 * are not normalized but are always the same for a given port.
 	 */
-	uint64_t timestamp;
+	uint64_t timestamp;//ol_flags设置了PKT_RX_TIMESTAMP，这个变量才有意义，驱动才会将报文的接受时间戳填充进来
 
 	/* second cache line - fields only used in slow path or on TX */
 	MARKER cacheline1 __rte_cache_min_aligned;
@@ -617,10 +619,11 @@ struct rte_mbuf {
 		uint64_t udata64; /**< Allow 8-byte userdata on 32-bit */
 	};
 
-	struct rte_mempool *pool; /**< Pool from which mbuf was allocated. */
-	struct rte_mbuf *next;    /**< Next segment of scattered packet. */
+	struct rte_mempool *pool; /**表示mbuf从这个pool申请来的，释放mbuf的时候用到< Pool from which mbuf was allocated. */
+	struct rte_mbuf *next;    /**下一个段的地址< Next segment of scattered packet. */
 
 	/* fields to support TX offloads */
+    //一般tx offload需要设置以太网报文头的信息，如l2_len、l3_len、l4_len等等，这个一般是根据nic硬件支持的类型来设置和使用的
 	RTE_STD_C11
 	union {
 		uint64_t tx_offload;       /**< combined for easy fetch */
@@ -644,13 +647,13 @@ struct rte_mbuf {
 
 	/** Size of the application private data. In case of an indirect
 	 * mbuf, it stores the direct mbuf private data size. */
-	uint16_t priv_size;
+	uint16_t priv_size;//表示mbuf里面私有数据空间大小
 
 	/** Timesync flags for use with IEEE1588. */
-	uint16_t timesync;
+	uint16_t timesync;//表示IEEE1588标准的时间同步标志
 
 	/** Sequence number. See also rte_reorder_insert(). */
-	uint32_t seqn;
+	uint32_t seqn;//mbuf的序列号，是dpdk的一个排序库用到的表示，它会根据这里的序列号来从排序报文
 
 	/** Shared data for external buffer attached to mbuf. See
 	 * rte_pktmbuf_attach_extbuf().
