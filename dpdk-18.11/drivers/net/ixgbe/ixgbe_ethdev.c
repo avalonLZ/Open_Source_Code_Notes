@@ -2926,6 +2926,8 @@ ixgbe_dev_close(struct rte_eth_dev *dev)
 	ixgbe_pf_reset_hw(hw);
 
 	ixgbe_dev_stop(dev);
+
+    //在ixbge常规操作中，只有此处会将adapter_stopped置位
 	hw->adapter_stopped = 1;
 
 	ixgbe_dev_free_queues(dev);
