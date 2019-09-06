@@ -404,6 +404,7 @@ kni_ioctl_create(struct net *net, uint32_t ioctl_num,
 	pci = pci_get_device(dev_info.vendor_id, dev_info.device_id, NULL);
 
 	/* Support Ethtool */
+    //ethtool使用ioctl,而kni没有给出对应的unlocked_ioctl接口,还是无法support ethtool 
 	while (pci) {
 		pr_debug("pci_bus: %02x:%02x:%02x\n",
 					pci->bus->number,
