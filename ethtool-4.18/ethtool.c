@@ -2013,7 +2013,7 @@ static int do_schannels(struct cmd_context *ctx)
 		{ "tx", CMDL_S32, &channels_tx_wanted, &echannels.tx_count },
 		//lz "other"表示更改用于其他目的（非收发包）的通道数
 		//例如：连接中断通道或sriov协调通道
-		//该说明来自linux man网站
+		//该说明来自linux man
 		{ "other", CMDL_S32, &channels_other_wanted,
 		  &echannels.other_count },
 		{ "combined", CMDL_S32, &channels_combined_wanted,
